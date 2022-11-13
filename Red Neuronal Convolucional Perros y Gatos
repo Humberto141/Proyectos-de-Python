@@ -1,0 +1,108 @@
+from keras.models import Sequential
+from keras.layers import Conv2D
+from keras.layers import MaxPooling2D
+from keras.layers import Flatten
+from keras.layers import Dense
+from keras.layers import Dropout
+
+classifier = Sequential()
+
+classifier.add(Conv2D(32, (3, 3), input_shape = (64, 64, 3), activation = 'relu'))
+
+classifier.add(MaxPooling2D(pool_size = (2, 2)))
+#classifier.add(Dropout(rate = 0.1))
+
+classifier.add(Conv2D(32, (3, 3), activation = 'relu'))
+classifier.add(MaxPooling2D(pool_size = (2, 2)))
+#classifier.add(Dropout(rate = 0.1))
+
+
+
+classifier.add(Flatten())
+
+classifier.add(Dense(units = 128, activation = 'relu'))
+#classifier.add(Dropout(rate = 0.2))
+
+
+
+
+classifier.add(Dense(units = 1, activation = 'sigmoid'))
+
+classifier.compile(optimizer = 'adam', loss = 'binary_crossentropy', metrics = ['accuracy'])
+
+from keras.preprocessing.image import ImageDataGenerator
+
+train_datagen = ImageDataGenerator(rescale = 1./255,
+                                   shear_range = 0.2,
+                                   zoom_range = 0.2,
+                                   horizontal_flip = True)
+
+test_datagen = ImageDataGenerator(rescale = 1./255)
+
+training_set = train_datagen.flow_from_directory('C:/Users/usuario/Desktop/deep learning/deeplearning-az-master/datasets/Part 2 - Convolutional Neural Networks (CNN)/dataset/training_set',
+                                                 target_size = (64, 64),
+                                                 batch_size = 32,
+                                                 class_mode = 'binary')
+
+test_set = test_datagen.flow_from_directory('C:/Users/usuario/Desktop/deep learning/deeplearning-az-master/datasets/Part 2 - Convolutional Neural Networks (CNN)/dataset/test_set',
+                                            target_size = (64, 64),
+                                            batch_size = 32,
+                                            class_mode = 'binary')
+
+history = classifier.fit(training_set,
+                         steps_per_epoch = 250, ### 8000 imagenes total de imagenes del dataset de entenemaiento // batch size
+                         epochs = 24,
+                         validation_data = test_set,
+                         validation_steps = 62) ### 2000 imagenes 
+
+########################################################################################################
+##### siempre steps por epoch = total de imagenes training/batch size ##################################
+##### siempre validation_steps = total de imagenes test/batch size  ####################################
+########################################################################################################
+################################################## NUEVA PREDICCION ###############################################
+##################################################################################################################
+
+#####################################################################################################
+################## Visualizacion de la precision y loss para dataset de training y test #############
+#####################################################################################################
+
+epochs = 24
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs_range = range(epochs)
+
+plt.figure(figsize=(8, 8))
+plt.subplot(1, 2, 1)
+plt.plot(epochs_range, acc, label='Training Accuracy')
+plt.plot(epochs_range, val_acc, label='Validation Accuracy')
+plt.legend(loc='lower right')
+plt.title('Training and Validation Accuracy')
+
+plt.subplot(1, 2, 2)
+plt.plot(epochs_range, loss, label='Training Loss')
+plt.plot(epochs_range, val_loss, label='Validation Loss')
+plt.legend(loc='upper right')
+plt.title('Training and Validation Loss')
+plt.show()
+
+#####################################################################################################
+###################################### PREDICCIONES A HACER #########################################
+#####################################################################################################
+print(training_set.class_indices)
+import numpy as np
+from keras.preprocessing import image
+test_image = keras.utils.load_img("single_prediction/cat_or_dog_2.jpg", target_size = (64, 64))
+test_image = keras.utils.img_to_array(test_image)
+test_image = np.expand_dims(test_image, axis = 0)
+result = classifier.predict(test_image)
+training_set.class_indices ### ver los indices de los nombres !!!!!!!!
+if result[0][0] == 1:
+    prediction = "dog"
+else:
+    prediction = "cat"
+print(prediction)
+print(result)
